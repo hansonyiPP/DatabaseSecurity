@@ -103,7 +103,7 @@
 --     VALUES ('User Account Creation', 'Created user account for ' + @Username, DATEADD(HOUR, 8, GETDATE()));
 -- END;
 
--- EXEC CreateUserAccount 'Complex Manager', 'SK', 'Password1', 'Sheng Kit', '0123456789', 'sk@gmail.com';
+-- EXEC CreateUserAccount 'Complex manager', 'TEST', 'Password1', 'Testing', '023948234', 'test@gmail.com';
 
 -- CREATE TRIGGER trg_InsteadOfUpdate_ComplexManagerUsers
 -- ON ComplexManagerUsers
@@ -200,6 +200,10 @@
 --         BEGIN
 --             SET @sql = N'ALTER LOGIN [' + @OldUsername + N'] WITH NAME = [' + @Username + N']';
 --             EXEC sp_executesql @sql;
+
+--             -- Update the SQL user name
+--             SET @sql = N'ALTER USER [' + @OldUsername + N'] WITH NAME = [' + @Username + N']';
+--             EXEC sp_executesql @sql;
 --         END
 
 --         IF @Password IS NOT NULL AND CONVERT(varbinary, @Password) <> @OldPassword
@@ -215,7 +219,7 @@
 -- END;
 
 -- EXEC UpdateComplexManagerUser
---     @UserID = 3,
+--     @UserID = 4,
 --     @Username = 'LOLTEST',
 --     @Email = 'testlol@example.com';
 
@@ -251,7 +255,7 @@
 --     END
 -- END;
 
--- EXEC SoftDeleteComplexManagerUser @UserID = 8;
+-- EXEC SoftDeleteComplexManagerUser @UserID = 4;
 
 -- CREATE PROCEDURE HardDeleteComplexManager
 --     @UserID INT
@@ -273,7 +277,7 @@
 --     END
 -- END;
 
--- EXEC HardDeleteComplexManager @UserID = 7;
+-- EXEC HardDeleteComplexManager @UserID = 4;
 
 -- CREATE PROCEDURE RecoverComplexManager
 --     @UserID INT
