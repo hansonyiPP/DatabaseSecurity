@@ -402,6 +402,102 @@
 --    @Name = 'Zhong',
 --    @ContactInfo = 'zhong@hacker.com';
 
+--CREATE TABLE IndividualCustomerRegistrations (
+--    RegistrationID INT PRIMARY KEY IDENTITY(1,1),
+--    EventID INT,
+--    UserID INT,
+--    CONSTRAINT FK_Event_Registration FOREIGN KEY (EventID) REFERENCES TournamentEvents(EventID),
+--    CONSTRAINT FK_Customer_Registration FOREIGN KEY (UserID) REFERENCES Users(ID)
+--);
+
+--CREATE PROCEDURE IndividualCustomerRegisterForEvent
+--    @EventID INT,
+--    @UserID INT
+--AS
+--BEGIN
+--    -- Check if the user is an Individual Customer
+--    IF EXISTS (SELECT 1 FROM Users WHERE ID = @UserID AND Role = 'Individual Customer')
+--    BEGIN
+--        -- Check if the event exists
+--        IF EXISTS (SELECT 1 FROM TournamentEvents WHERE EventID = @EventID)
+--        BEGIN
+--            -- Insert into IndividualCustomerRegistrations
+--            INSERT INTO IndividualCustomerRegistrations (EventID, UserID)
+--            VALUES (@EventID, @UserID);
+
+--            -- Log the registration
+--            INSERT INTO Activity_Log (type, description, Date, UserID)
+--            VALUES ('Register', 'Registered individual customer with UserID ' + CAST(@UserID AS VARCHAR) + ' for event ' + CAST(@EventID AS VARCHAR), GETDATE(), @UserID);
+--        END
+--        ELSE
+--        BEGIN
+--            RAISERROR('The specified EventID does not exist.', 16, 1);
+--        END
+--    END
+--    ELSE
+--    BEGIN
+--        RAISERROR('The specified UserID is not an Individual Customer.', 16, 1);
+--    END
+--END;
+
+--EXEC IndividualCustomerRegisterForEvent
+--    @EventID = 2,
+--    @UserID = 3;
+
+-- List out all partipants
+--CREATE VIEW EventParticipantsSummary AS
+--SELECT
+--    te.EventID,
+--    te.EventName,
+--    te.EventDate,
+--    te.OrganizerID,
+--    u.Username AS OrganizerUsername,
+--    u.Name AS OrganizerName,
+--    p.ParticipantID,
+--    p.Name AS ParticipantName,
+--    'Participant' AS ParticipantType
+--FROM
+--    TournamentEvents te
+--LEFT JOIN
+--    Participants p ON te.EventID = p.EventID
+--JOIN
+--    Users u ON te.OrganizerID = u.ID
+--UNION
+--SELECT
+--    te.EventID,
+--    te.EventName,
+--    te.EventDate,
+--    te.OrganizerID,
+--    u.Username AS OrganizerUsername,
+--    u.Name AS OrganizerName,
+--    icr.UserID AS ParticipantID,
+--    iu.Name AS ParticipantName,
+--    'Individual Customer' AS ParticipantType
+--FROM
+--    TournamentEvents te
+--LEFT JOIN
+--    IndividualCustomerRegistrations icr ON te.EventID = icr.EventID
+--JOIN
+--    Users u ON te.OrganizerID = u.ID
+--JOIN
+--    Users iu ON icr.UserID = iu.ID;
+
+-- View Total Participants
+--CREATE VIEW EventParticipantsSummary AS
+--SELECT
+--    te.EventID,
+--    te.EventName,
+--    te.EventDate,
+--    te.OrganizerID,
+--    u.Username AS OrganizerUsername,
+--    u.Name AS OrganizerName,
+--    (SELECT COUNT(*) FROM Participants p WHERE p.EventID = te.EventID) +
+--    (SELECT COUNT(*) FROM IndividualCustomerRegistrations icr WHERE icr.EventID = te.EventID) AS TotalParticipants
+--FROM
+--    TournamentEvents te
+--JOIN
+--    Users u ON te.OrganizerID = u.ID;
+
 
 
 
