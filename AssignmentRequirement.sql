@@ -17,7 +17,6 @@ CREATE USER CM2 WITHOUT LOGIN;
 ALTER ROLE ComplexManager ADD MEMBER TZ;
 ALTER ROLE ComplexManager ADD MEMBER CM2;
 
-
 CREATE LOGIN TO1 with Password='123';
 CREATE USER TO1 FOR LOGIN TO1;
 CREATE USER TO2 WITHOUT LOGIN;
@@ -33,16 +32,15 @@ ALTER ROLE IndividualCustomer ADD MEMBER TC2;
 CREATE TABLE Users (
     ID int IDENTITY(1,1) NOT NULL PRIMARY KEY,
     Username varchar(50) NOT NULL, -- New column
-    Name char(100) NOT NULL,
-    Mobile varchar(12) NOT NULL,
-    email varchar(50) NOT NULL,
+    Name char(100) MASKED WITH (FUNCTION = 'partial(1,"X",1)') NOT NULL,
+    Mobile varchar(12) MASKED WITH (FUNCTION = 'partial(0,"XXX-XXX-",4)') NOT NULL,
+    email varchar(50) MASKED WITH (FUNCTION = 'email()') NOT NULL,
     Last_login datetime NULL,
     IsDeleted bit NOT NULL,
     ValidFrom datetime2 GENERATED ALWAYS AS ROW START NOT NULL,
     ValidTo datetime2 GENERATED ALWAYS AS ROW END NOT NULL,
     PERIOD FOR SYSTEM_TIME (ValidFrom, ValidTo)
 ) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.UsersHistory));
-
 
 CREATE TABLE Facility(
 	facilityID int IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -133,8 +131,8 @@ CREATE TABLE Payment(
 
 CREATE TABLE businessEntity(
 	businessID int IDENTITY(1,1) NOT NULL PRIMARY KEY,
-	userID int NOT NULL,
-	Name varchar(100) NOT NULL,
+	userID int NOT NULL, -- register by which userID
+	Name varchar(100) NOT NULL, -- Business name
     Mobile varchar(12) NOT NULL,
     email varchar(50) NOT NULL,
 	address varchar (255) NOT NULL,
@@ -143,4 +141,5 @@ CREATE TABLE businessEntity(
 );
 
 
+EXEC sp_readerrorlog 0, 1, 'Login'
 
