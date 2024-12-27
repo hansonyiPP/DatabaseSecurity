@@ -39,9 +39,9 @@ GRANT UNMASK TO TournamentOrganizer;
 GRANT EXEC ON dbo.createUserAccount TO DataAdmin;
 
 -- Update user details with schema
-GRANT UPDATE ON dbo.Users (Name, Mobile, Email) TO IndividualCustomer; -- 我感觉酱紫就够了，酱紫才是security level要做的东西
+GRANT UPDATE ON dbo.Users (Name, Mobile, Email) TO IndividualCustomer; -- I feel like this is enough. This is all about security level .
 GRANT UPDATE ON dbo.Users (Name, Mobile, Email) TO TournamentOrganizer; 
--- 这个偏向application了
+-- This more toward application liao
 CREATE PROCEDURE updateDetails 
 	@Name char(100),
 	@Mobile varchar(12),
@@ -197,9 +197,9 @@ SELECT * FROM ViewParticipants
 ---
 
 -- Update participants detail
-GRANT UPDATE ON dbo.Participants (Name, Mobile, Email) TO IndividualCustomer; -- 我感觉酱紫就够了，酱紫才是security level要做的东西
+GRANT UPDATE ON dbo.Participants (Name, Mobile, Email) TO IndividualCustomer; -- I feel like this is enough. This is all about security level .
 GRANT UPDATE ON dbo.Participants (Name, Mobile, Email) TO TournamentOrganizer; 
--- 这个偏向application了
+-- This more toward application liao
 CREATE PROCEDURE UpdateParticipantInfo
 	@ParticipantID INT,
     @NewName CHAR(100),
