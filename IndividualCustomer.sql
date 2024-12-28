@@ -16,7 +16,7 @@ ADD FILTER PREDICATE Security.securitypredicate(Username)
 ON dbo.Users
 WITH (STATE = ON);
 
-ALTER SECURITY POLICY userFilter WITH ( STATE = ON );
+ALTER SECURITY POLICY userFilter WITH ( STATE = OFF );
 
 SELECT * FROM userDetails
 SELECT * FROM Users
@@ -238,7 +238,7 @@ BEGIN
 END;
 GRANT EXEC ON UpdateParticipantInfo TO IndividualCustomer;
 GRANT EXEC ON UpdateParticipantInfo TO TournamentOrganizer;
-EXEC UpdateParticipantInfo 1,'MewMew','mew@example.com','012312311'
+EXEC UpdateParticipantInfo 1,'MewMew1','mew123@example.com','012312311'
 ----
 
 SELECT * FROM Booking
@@ -248,4 +248,97 @@ SELECT * FROM ParticipantTeam
 EXECUTE AS USER = 'SK';
 REVERT;
 
+CREATE TABLE UserAuditTable(
+	auditID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	UserID INT NOT NULL,
+	Updated_By VARCHAR(50) NOT NULL,
+	Updated_Date DATE NOT NULL,
+	Original_Name CHAR(100) NOT NULL,
+	New_Name CHAR(100) NULL,
+    Original_Mobile VARCHAR(12) NOT NULL,
+	New_Mobile VARCHAR(12) NULL,
+	Original_Email VARCHAR(50) NOT NULL,
+    New_Email VARCHAR(50) NOT NULL
+)
+SELECT * FROM UserAuditTable
 
+CREATE TRIGGER Audit_User_Update
+ON Users
+FOR UPDATE
+AS
+BEGIN
+	INSERT INTO UserAuditTable (
+		AuditID,
+		UserID,
+		Updated_By,
+		Updated_Date,
+		Original_Name,
+		New_Name,
+		Original_Mobile,
+		New_Mobile,
+		Original_Email,
+		New_Email
+	)
+	SELECT
+		NEWID(),
+		inserted.ID,
+		SYSTEM_USER,
+		GETDATE(),
+		deleted.Name,
+		inserted.Name,
+		deleted.Mobile,
+		inserted.Mobile,
+		deleted.email,
+		inserted.email
+	FROM 
+		deleted
+	INNER JOIN 
+		inserted ON deleted.ID = inserted.ID
+END
+
+CREATE TABLE ParticipantsAuditTable(
+	auditID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+	Updated_By VARCHAR(50) NOT NULL,
+	Updated_Date DATE NOT NULL,
+	ParticipantID INT NOT NULL,
+	Original_Name CHAR(100) NOT NULL,
+	New_Name CHAR(100) NULL,
+    Original_Mobile VARCHAR(12) NOT NULL,
+	New_Mobile VARCHAR(12) NULL,
+	Original_Email VARCHAR(50) NOT NULL,
+    New_Email VARCHAR(50) NOT NULL
+)
+SELECT *  FROM ParticipantsAuditTable
+CREATE TRIGGER Audit_Participants_Update
+ON Participants
+FOR UPDATE
+AS
+BEGIN
+	INSERT INTO ParticipantsAuditTable (
+		AuditID,
+		Updated_By,
+		Updated_Date,
+		ParticipantID,
+		Original_Name,
+		New_Name,
+		Original_Mobile,
+		New_Mobile,
+		Original_Email,
+		New_Email
+	)
+	SELECT
+		NEWID(),
+		SYSTEM_USER,
+		GETDATE(),
+		inserted.participantID,
+		deleted.Name,
+		inserted.Name,
+		deleted.Mobile,
+		inserted.Mobile,
+		deleted.email,
+		inserted.email
+	FROM 
+		deleted
+	INNER JOIN 
+		inserted ON deleted.participantID = inserted.participantID
+END
