@@ -63,12 +63,12 @@ EXEC AddTournamentEvent
 CREATE PROCEDURE UpdateTournamentEvent
     @eventID INT,                       -- The ID of the event to update
     @facilityID INT,                    -- The new facility ID
-    @userID INT,                        -- The user who is updating the event
     @eventName VARCHAR(100),            -- The new event name
     @eventDate DATETIME,                -- The new event date
     @status BIT                         -- The new status
 AS
 BEGIN
+	 SET NOCOUNT ON;
     -- Check if an event with the same name and date already exists (excluding the current event)
     IF EXISTS (
         SELECT 1
@@ -98,7 +98,6 @@ BEGIN
     UPDATE TournamentEvents
     SET 
         facilityID = @facilityID,
-        userID = @userID,
         eventName = @eventName,
         eventDate = @eventDate,
         status = @status
@@ -113,6 +112,7 @@ ON TournamentEvents
 AFTER UPDATE
 AS
 BEGIN
+	SET NOCOUNT ON;
     -- Check if the event name, date, or status was updated
     IF UPDATE(eventName) OR UPDATE(eventDate) OR UPDATE(status)
     BEGIN
@@ -128,7 +128,6 @@ END;
 EXEC UpdateTournamentEvent 
     @eventID = 2, 
     @facilityID = 2, 
-    @userID = 3, 
     @eventName = 'sad', 
     @eventDate = '2022-09-27 08:00:00', 
     @status = 1;
@@ -140,6 +139,7 @@ CREATE PROCEDURE DeleteTournamentEvent
     @eventID INT                         -- The ID of the event to delete
 AS
 BEGIN
+	SET NOCOUNT ON;
     -- Check if the event exists
     IF NOT EXISTS (
         SELECT 1
@@ -163,7 +163,7 @@ ON TournamentEvents
 AFTER DELETE
 AS
 BEGIN
-    
+    SET NOCOUNT ON;
     INSERT INTO TournamentEventAudit
     SELECT NEWID(),D.eventID,'DELETE',GETDATE(),D.userID,SUSER_SNAME(),D.eventName,D.eventName,NULL,D.eventDate,D.status                       
     FROM deleted D;  
@@ -172,7 +172,7 @@ END;
 
 
 EXEC DeleteTournamentEvent
-@eventID=1;
+@eventID=2;
 
 Select * FROM TournamentEvents
 Select * FROM TournamentEventAudit
@@ -185,8 +185,9 @@ GRANT EXEC ON DeleteTournamentEvent TO TournamentOrganizer;
 GRANT SELECT ON dbo.TournamentEvents TO TournamentOrganizer;
 GRANT SELECT ON dbo.TournamentEventAudit TO TournamentOrganizer;
 
-EXECUTE AS USER = 'SK';
+EXECUTE AS USER = 'Hanson';
 REVERT;
+
 
 
 
