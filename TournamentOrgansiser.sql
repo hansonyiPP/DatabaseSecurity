@@ -23,11 +23,8 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @userID INT;
-
-    -- Retrieve the userID based on the current session or user context
     SELECT @userID = ID FROM dbo.userdetails WHERE username = SYSTEM_USER;
 
-    -- Check if the userID exists and is authorized
     IF EXISTS (SELECT 1 FROM dbo.userdetails WHERE ID = @userID)
     BEGIN
         -- Check if an event with the same name and date already exists
@@ -129,8 +126,6 @@ BEGIN
     END
 END;
 
-
-
 CREATE TRIGGER trgTournamentEventUpdate
 ON TournamentEvents
 AFTER UPDATE
@@ -148,7 +143,6 @@ BEGIN
     END
 END;
 
-
 EXEC UpdateTournamentEvent 
     @eventID = 16, 
     @facilityID = 2, 
@@ -160,7 +154,7 @@ Select * FROM TournamentEvents
 Select * FROM TournamentEventAudit
 
 CREATE PROCEDURE DeleteTournamentEvent
-    @eventID INT                         -- The ID of the event to delete
+    @eventID INT                         
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -203,8 +197,6 @@ BEGIN
     SELECT NEWID(),D.eventID,'DELETE',GETDATE(),D.userID,SYSTEM_USER,D.eventName,D.eventName,NULL,D.eventDate,D.status                       
     FROM deleted D;  
 END;
-
-
 
 EXEC DeleteTournamentEvent
 @eventID=2;
