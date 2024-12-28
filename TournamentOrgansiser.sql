@@ -1,15 +1,17 @@
 CREATE TABLE TournamentEventAudit (
     auditID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,      
-    eventID INT,                                
+    eventID INT,                                 
     actionType VARCHAR(10),                     
-    actionDate DATETIME,                        
+    actionDate DATETIME,                         
     userID INT,                                 
-    userName VARCHAR(100),                      
+    userName VARCHAR(100),                       
     eventName VARCHAR(100),                     
-    oldEventName VARCHAR(100),                  
+    oldEventName VARCHAR(100),  
+	newEventDate DATETIME ,
     oldEventDate DATETIME,                      
-    oldStatus BIT                               
+    oldStatus BIT                                                
 );
+
 
 CREATE PROCEDURE AddTournamentEvent
     @facilityID INT,
@@ -49,6 +51,14 @@ BEGIN
 
     PRINT 'Tournament Event has been successfully created.';
 END;
+
+EXEC AddTournamentEvent
+    @facilityID = 1,
+    @userID = 1,
+    @eventName = 'Annual Tennis Championship',
+    @eventDate = '2024-05-15 09:00:00',
+    @status = 1;  -- 1 for active, 0 for inactive
+
 
 CREATE PROCEDURE UpdateTournamentEvent
     @eventID INT,                       -- The ID of the event to update
@@ -97,6 +107,7 @@ BEGIN
     PRINT 'Tournament Event has been successfully updated.';
 END;
 
+
 CREATE TRIGGER trgTournamentEventUpdate
 ON TournamentEvents
 AFTER UPDATE
@@ -105,20 +116,21 @@ BEGIN
     -- Check if the event name, date, or status was updated
     IF UPDATE(eventName) OR UPDATE(eventDate) OR UPDATE(status)
     BEGIN
+        -- Insert the changes into the TournamentEventAudit table
         INSERT INTO TournamentEventAudit
-        SELECT 
-            NEWID(), I.eventID,'UPDATE',GETDATE(),I.userID,SUSER_SNAME(),I.eventName,D.eventName,D.eventDate,D.status                          
+        SELECT NEWID(),I.eventID,'UPDATE',GETDATE(),I.userID,SUSER_SNAME(),I.eventName,D.eventName,I.eventDate,D.eventDate,D.status                
         FROM inserted I
-        INNER JOIN deleted D ON I.eventID = D.eventID; 
+        INNER JOIN deleted D ON I.eventID = D.eventID;  -- Join inserted and deleted to get old and new values
     END
 END;
 
+
 EXEC UpdateTournamentEvent 
-    @eventID = 8, 
+    @eventID = 2, 
     @facilityID = 2, 
     @userID = 3, 
-    @eventName = 'happy', 
-    @eventDate = '2022-08-20 10:00:00', 
+    @eventName = 'sad', 
+    @eventDate = '2022-09-27 08:00:00', 
     @status = 1;
 
 Select * FROM TournamentEvents
@@ -151,24 +163,30 @@ ON TournamentEvents
 AFTER DELETE
 AS
 BEGIN
+    
     INSERT INTO TournamentEventAudit
-    SELECT 
-        NEWID(),D.eventID,'DELETE',GETDATE(),D.userID,SUSER_SNAME(),D.eventName,D.eventName,D.eventDate,D.status              
-    FROM deleted D;         
+    SELECT NEWID(),D.eventID,'DELETE',GETDATE(),D.userID,SUSER_SNAME(),D.eventName,D.eventName,NULL,D.eventDate,D.status                       
+    FROM deleted D;  
 END;
 
+
+
 EXEC DeleteTournamentEvent
-@eventID=8;
+@eventID=1;
 
 Select * FROM TournamentEvents
 Select * FROM TournamentEventAudit
 
-Revert;
+
+-- Grant EXECUTE permission on the AddTournamentEvent stored procedure
 GRANT EXEC ON AddTournamentEvent TO TournamentOrganizer;
 GRANT EXEC ON UpdateTournamentEvent TO TournamentOrganizer;
 GRANT EXEC ON DeleteTournamentEvent TO TournamentOrganizer;
+GRANT SELECT ON dbo.TournamentEvents TO TournamentOrganizer;
+GRANT SELECT ON dbo.TournamentEventAudit TO TournamentOrganizer;
 
-
+EXECUTE AS USER = 'SK';
+REVERT;
 
 
 
