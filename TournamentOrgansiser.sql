@@ -163,8 +163,7 @@ EXEC DeleteTournamentEvent
 Select * FROM TournamentEvents
 Select * FROM TournamentEventAudit
 
-
--- Grant EXECUTE permission on the AddTournamentEvent stored procedure
+Revert;
 GRANT EXEC ON AddTournamentEvent TO TournamentOrganizer;
 GRANT EXEC ON UpdateTournamentEvent TO TournamentOrganizer;
 GRANT EXEC ON DeleteTournamentEvent TO TournamentOrganizer;
