@@ -12,7 +12,6 @@ CREATE TABLE TournamentEventAudit (
     oldStatus BIT                                                
 );
 
-
 CREATE PROCEDURE AddTournamentEvent
     @facilityID INT,
     @eventName VARCHAR(100),
@@ -23,54 +22,41 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @userID INT;
-
-    -- Retrieve the userID based on the current session or user context
     SELECT @userID = ID FROM dbo.userdetails WHERE username = SYSTEM_USER;
 
-    -- Check if the userID exists
-    IF @userID IS NULL
+    IF EXISTS (SELECT 1 FROM dbo.userdetails WHERE ID = @userID)
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM TournamentEvents
+            WHERE eventName = @eventName
+            AND eventDate = @eventDate
+        )
+        BEGIN
+            PRINT 'An event with this name and date already exists.';
+            RETURN;
+        END
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM Facility
+            WHERE facilityID = @facilityID
+            AND availability > 0
+        )
+        BEGIN
+            PRINT 'The facility is not available for the selected date.';
+            RETURN;
+        END
+		
+        INSERT INTO dbo.TournamentEvents (facilityID, userID, eventName, eventDate, status)
+        VALUES (@facilityID, @userID, @eventName, @eventDate, @status);
+
+        PRINT 'Tournament Event has been successfully created.';
+    END
+    ELSE
     BEGIN
         PRINT 'You are not authorized to perform this action.';
-        RETURN;  -- Exit the procedure if userID does not exist
     END
-
-    -- Check if an event with the same name and date already exists
-    IF EXISTS (
-        SELECT 1
-        FROM TournamentEvents
-        WHERE eventName = @eventName
-        AND eventDate = @eventDate
-    )
-    BEGIN
-        PRINT 'Error: An event with this name and date already exists.';
-        RETURN;
-    END
-
-    -- Check if the facility is available for the event date
-    IF NOT EXISTS (
-        SELECT 1
-        FROM Facility
-        WHERE facilityID = @facilityID
-        AND availability > 0
-    )
-    BEGIN
-        PRINT 'The facility is not available for the selected date.';
-        RETURN;
-    END
-
-    -- Insert the new event into the TournamentEvents table
-    INSERT INTO dbo.TournamentEvents (facilityID, userID, eventName, eventDate, status)
-    VALUES (@facilityID, @userID, @eventName, @eventDate, @status);
-
-    PRINT 'Tournament Event has been successfully created.';
-END;
-
-
-    -- Insert the new event into the TournamentEvents table
-    INSERT INTO dbo.TournamentEvents (facilityID, userID, eventName, eventDate, status)
-    VALUES (@facilityID, @userID, @eventName, @eventDate, @status);
-
-    PRINT 'Tournament Event has been successfully created.';
 END;
 
 EXEC AddTournamentEvent
