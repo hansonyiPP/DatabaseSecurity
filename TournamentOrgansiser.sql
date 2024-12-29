@@ -22,12 +22,8 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @userID INT;
-    SELECT @userID = ID FROM dbo.userdetails WHERE username = SYSTEM_USER;
-
-    IF EXISTS (SELECT 1 FROM dbo.userdetails WHERE ID = @userID)
+    IF EXISTS (SELECT 1 FROM dbo.userdetails)
     BEGIN
-        -- Check if an event with the same name and date already exists
         IF EXISTS (
             SELECT 1
             FROM TournamentEvents
@@ -39,7 +35,6 @@ BEGIN
             RETURN;
         END
 
-        -- Check if the facility is available for the event date
         IF NOT EXISTS (
             SELECT 1
             FROM Facility
@@ -51,9 +46,14 @@ BEGIN
             RETURN;
         END
 
-        -- Insert the new event into the TournamentEvents table
         INSERT INTO dbo.TournamentEvents (facilityID, userID, eventName, eventDate, status)
-        VALUES (@facilityID, @userID, @eventName, @eventDate, @status);
+        VALUES (
+            @facilityID,
+            (SELECT ID FROM dbo.userdetails),  
+            @eventName,
+            @eventDate,
+            @status
+        );
 
         PRINT 'Tournament Event has been successfully created.';
     END
@@ -66,47 +66,45 @@ END;
 
 EXEC AddTournamentEvent
     @facilityID = 1,
-    @eventName = 'GayParty',
-    @eventDate = '2029-05-15 09:00:00',
+    @eventName = 'TZParty',
+    @eventDate = '2010-05-15 09:00:00',
     @status = 1;  -- 1 for active, 0 for inactive
 
 
 CREATE PROCEDURE UpdateTournamentEvent
     @eventID INT,                       
-    @facilityID INT,                    
-    @eventName VARCHAR(100),            
-    @eventDate DATETIME,                
-    @status BIT                         
+    @facilityID INT,                     
+    @eventName VARCHAR(100),             
+    @eventDate DATETIME,                 
+    @status BIT                          
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @userID INT;
-    SELECT @userID = ID FROM dbo.userdetails WHERE username = SYSTEM_USER;
-
-    IF EXISTS (SELECT 1 FROM dbo.userdetails WHERE ID = @userID)
+    -- Check if the user exists
+    IF EXISTS (SELECT 1 FROM dbo.userdetails)
     BEGIN
         IF EXISTS (
             SELECT 1
             FROM TournamentEvents
             WHERE eventName = @eventName
             AND eventDate = @eventDate
-            AND eventID != @eventID  
+            AND eventID != @eventID  -- Ensure it is not the event being updated
         )
         BEGIN
-            PRINT 'An event with this name and date already exists.';
+            PRINT 'Error: An event with this name and date already exists.';
             RETURN;
         END
 
-        
+        -- Check if the facility is available on the selected date
         IF NOT EXISTS (
             SELECT 1
             FROM Facility
             WHERE facilityID = @facilityID
-            AND availability > 0
+            AND availability > 0  -- Ensure the facility has availability
         )
         BEGIN
-            PRINT 'The facility is not available for the selected date.';
+            PRINT 'Error: The facility is not available for the selected date.';
             RETURN;
         END
 
@@ -126,28 +124,30 @@ BEGIN
     END
 END;
 
+
 CREATE TRIGGER trgTournamentEventUpdate
 ON TournamentEvents
 AFTER UPDATE
 AS
 BEGIN
 	SET NOCOUNT ON;
-    -- Check if the event name, date, or status was updated
+   
     IF UPDATE(eventName) OR UPDATE(eventDate) OR UPDATE(status)
     BEGIN
-        -- Insert the changes into the TournamentEventAudit table
+       
         INSERT INTO TournamentEventAudit
         SELECT NEWID(),I.eventID,'UPDATE',GETDATE(),I.userID,SYSTEM_USER,I.eventName,D.eventName,I.eventDate,D.eventDate,D.status                
         FROM inserted I
-        INNER JOIN deleted D ON I.eventID = D.eventID;  -- Join inserted and deleted to get old and new values
+        INNER JOIN deleted D ON I.eventID = D.eventID; 
     END
 END;
 
+--- Testing
 EXEC UpdateTournamentEvent 
-    @eventID = 16, 
+    @eventID = 5, 
     @facilityID = 2, 
-    @eventName = 'PIKACHU', 
-    @eventDate = '2022-09-27 08:00:00', 
+    @eventName = 'NYC', 
+    @eventDate = '2051-01-22 08:00:00', 
     @status = 1;
 
 Select * FROM TournamentEvents
@@ -158,13 +158,9 @@ CREATE PROCEDURE DeleteTournamentEvent
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @userID INT;
-    SELECT @userID = ID FROM dbo.userdetails WHERE username = SYSTEM_USER;
-
-    IF EXISTS (SELECT 1 FROM dbo.userdetails WHERE ID = @userID)
+    IF EXISTS (SELECT 1 FROM dbo.userdetails)
     BEGIN
-        
+       
         IF NOT EXISTS (
             SELECT 1
             FROM TournamentEvents
@@ -187,6 +183,7 @@ BEGIN
 END;
 
 
+
 CREATE TRIGGER trgTournamentEventDelete
 ON TournamentEvents
 AFTER DELETE
@@ -198,8 +195,9 @@ BEGIN
     FROM deleted D;  
 END;
 
+--- Testing
 EXEC DeleteTournamentEvent
-@eventID=2;
+@eventID=5;
 
 Select * FROM TournamentEvents
 Select * FROM TournamentEventAudit
