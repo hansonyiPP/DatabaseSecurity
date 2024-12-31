@@ -16,27 +16,23 @@ WITH Subject = 'Cert_For_Payment'
 GO
 SELECT * FROM sys.certificates
 
-CREATE PROCEDURE doPayment
-	@facilityID INT,
-	@userID INT,
-	@type VARCHAR(50),
-	@amount INT,
-	@cardNo VARCHAR(16),
-	@expiryDate DATE,
-	@CCV VARCHAR(3)
+CREATE TRIGGER trg_EncryptCards
+ON Payment
+AFTER INSERT
 AS
 BEGIN
-	DECLARE @ENC_CardNumber VARBINARY(MAX);
-	DECLARE @ENC_CCV VARBINARY(MAX);
-	SET @ENC_CardNumber = ENCRYPTBYCERT(CERT_ID('Cert_Payment'), @cardNo);
-	SET @ENC_CCV = ENCRYPTBYCERT(CERT_ID('Cert_Payment'), @CCV); 
-
-	INSERT INTO Payment (facilityID, userID, type, amount, cardNo, expiryDate, CCV)
-	VALUES (@facilityID, @userID, @type, @amount, @ENC_CardNumber, @expiryDate, @ENC_CCV);
+	UPDATE Payment
+	SET
+		cardNo =  ENCRYPTBYCERT(CERT_ID('Cert_Payment'), CAST(i.cardNo AS NVARCHAR(MAX))),
+        CCV = ENCRYPTBYCERT(CERT_ID('Cert_Payment'), CAST(i.CCV AS NVARCHAR(MAX)))
+	FROM Payment p
+	INNER JOIN inserted i
+		ON p.facilityID = i.facilityID
+		AND p.userID = i.userID
+		AND p.type = i.type
+		AND p.amount = i.amount
+		AND p.expiryDate = i.expiryDate;
 END
 
-UPDATE Payment SET
-cardNo = ENCRYPTBYCERT(CERT_ID('Cert_Payment'), '1234567891234567')
-WHERE paymentID = 1
+INSERT INTO Payment VALUES (1, 3, 'Card', 150, '2024-07-31', CONVERT(VARBINARY(MAX), '1234567812345678'), CONVERT(VARBINARY(MAX), '123'))
 
-EXEC doPayment 1, 2, 'Card', 150, '0000000000000000', '2025-07-31', '125'
