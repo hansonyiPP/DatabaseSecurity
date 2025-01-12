@@ -2,7 +2,7 @@
 CREATE SCHEMA Security;
 GO
 
-ALTER FUNCTION Security.securitypredicate(
+CREATE FUNCTION Security.securitypredicate(
 	@Username AS varchar(50))
 	RETURNS TABLE
 WITH SCHEMABINDING
@@ -163,12 +163,15 @@ EXEC RegisterParticipants 5, 'MewTwo', 'mewtwo@gmail.com', '012345678'
 EXEC RegisterParticipants 5, 'MewFour', 'mewthree@gmail.com', '012345678'
 
 -- View participants details under booking
-GRANT SELECT ON Participants TO IndividualCustomer
+DENY SELECT ON Participants TO IndividualCustomer
+DENY SELECT ON Participants TO TournamentOrganizer
+
 GRANT SELECT ON Booking TO IndividualCustomer
-GRANT SELECT ON ParticipantTeam TO IndividualCustomer
-GRANT SELECT ON Participants TO TournamentOrganizer
 GRANT SELECT ON Booking TO TournamentOrganizer
-GRANT SELECT ON ParticipantTeam TO TournamentOrganizer
+
+DENY SELECT ON ParticipantTeam TO IndividualCustomer
+DENY SELECT ON ParticipantTeam TO TournamentOrganizer
+
 GRANT SELECT ON ViewParticipants TO IndividualCustomer
 GRANT SELECT ON ViewParticipants TO TournamentOrganizer
 
@@ -245,10 +248,50 @@ EXEC UpdateParticipantInfo 1,'MewMew1','mew123@example.com','012312311'
 SELECT * FROM Booking
 SELECT * FROM Participants
 SELECT * FROM ParticipantTeam
+SELECT * FROM Payment
 
-EXECUTE AS USER = 'TZ';
-SELECT * FROM userDetails
-REVERT;
+EXECUTE AS USER = 'SK';
+select * from viewTransaction
+REVERT
+
+INSERT INTO [Transaction] VALUES (1, 5, 50, '2024-12-16 16:00:00')
+
+CREATE VIEW viewTransaction AS
+SELECT
+	transactionID,
+	bookingID,
+	[transaction].paymentID,
+	ud.ID AS userID,
+	ud.Name,
+	price,
+	[dateTime]
+FROM
+	[Transaction]
+INNER JOIN
+	Payment p ON [Transaction].paymentID = p.paymentID
+INNER JOIN
+	userDetails ud ON p.userID = ud.ID
+
+GRANT SELECT ON viewTransaction TO IndividualCustomer;
+GRANT SELECT ON viewTransaction TO TournamentOrganizer;
+
+CREATE VIEW viewPayment AS
+SELECT
+	paymentID,
+	facilityID,
+	userID,
+	type,
+	amount,
+	expiryDate,
+	cardNo,
+	CCV
+FROM
+	Payment
+INNER JOIN
+	userDetails ud ON Payment.userID = ud.ID
+
+GRANT SELECT ON viewPayment TO IndividualCustomer;
+GRANT SELECT ON viewPayment TO TournamentOrganizer
 
 CREATE TABLE UserAuditTable(
 	auditID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
