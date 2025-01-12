@@ -2,13 +2,13 @@
 CREATE SCHEMA Security;
 GO
 
-CREATE FUNCTION Security.securitypredicate(
+ALTER FUNCTION Security.securitypredicate(
 	@Username AS varchar(50))
 	RETURNS TABLE
 WITH SCHEMABINDING
 AS
 	RETURN SELECT 1 AS securitypredicate_result
-WHERE @Username = USER_NAME() OR IS_MEMBER('DataAdmin') = 1;
+WHERE @Username = USER_NAME() OR IS_MEMBER('DataAdmin') = 1 OR IS_MEMBER('ComplexManager') = 1;
 GO
 
 CREATE SECURITY POLICY userFilter
@@ -32,6 +32,7 @@ SELECT
 FROM
     Users
 
+GRANT SELECT ON dbo.userDetails TO ComplexManager;
 GRANT SELECT ON dbo.userDetails TO IndividualCustomer;
 GRANT SELECT ON dbo.userDetails TO TournamentOrganizer;
 GRANT UNMASK TO IndividualCustomer;
@@ -245,7 +246,8 @@ SELECT * FROM Booking
 SELECT * FROM Participants
 SELECT * FROM ParticipantTeam
 
-EXECUTE AS USER = 'SK';
+EXECUTE AS USER = 'TZ';
+SELECT * FROM userDetails
 REVERT;
 
 CREATE TABLE UserAuditTable(
