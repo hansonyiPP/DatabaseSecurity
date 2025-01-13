@@ -125,7 +125,7 @@ BEGIN
 END;
 
 
-CREATE TRIGGER trgTournamentEventUpdate
+CREATE TRIGGER TournamentEventUpdate
 ON TournamentEvents
 AFTER UPDATE
 AS
@@ -184,7 +184,7 @@ END;
 
 
 
-CREATE TRIGGER trgTournamentEventDelete
+CREATE TRIGGER TournamentEventDelete
 ON TournamentEvents
 AFTER DELETE
 AS
