@@ -24,7 +24,7 @@ BEGIN
 	UPDATE Payment
 	SET
 		cardNo =  ENCRYPTBYCERT(CERT_ID('Cert_Payment'), CAST(i.cardNo AS NVARCHAR(MAX))),
-        CCV = ENCRYPTBYCERT(CERT_ID('Cert_Payment'), CAST(i.CCV AS NVARCHAR(MAX)))
+        CCV = HASHBYTES('sha2_256', CAST(i.CCV AS NVARCHAR(MAX)))
 	FROM Payment p
 	INNER JOIN inserted i
 		ON p.facilityID = i.facilityID
@@ -36,3 +36,5 @@ END
 
 INSERT INTO Payment VALUES (1, 3, 'Card', 150, '2024-07-31', CONVERT(VARBINARY(MAX), '1234567812345678'), CONVERT(VARBINARY(MAX), '123'))
 
+
+SELECT * FROM Payment
