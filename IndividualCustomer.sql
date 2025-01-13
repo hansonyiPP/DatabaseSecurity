@@ -1,4 +1,4 @@
-﻿-- Create Schema for user to edit only they  data
+﻿-- Create Schema for user to edit only they data
 CREATE SCHEMA Security;
 GO
 
@@ -39,10 +39,10 @@ GRANT UNMASK TO IndividualCustomer;
 GRANT UNMASK TO TournamentOrganizer;
 GRANT EXEC ON dbo.createUserAccount TO DataAdmin;
 
--- Update user details with schema
-GRANT UPDATE ON dbo.Users (Name, Mobile, Email) TO IndividualCustomer; -- I feel like this is enough. This is all about security level .
+-- Update user details
+GRANT UPDATE ON dbo.Users (Name, Mobile, Email) TO IndividualCustomer;
 GRANT UPDATE ON dbo.Users (Name, Mobile, Email) TO TournamentOrganizer; 
--- This more toward application liao
+
 CREATE PROCEDURE updateDetails 
 	@Name char(100),
 	@Mobile varchar(12),
@@ -67,14 +67,15 @@ BEGIN
 	END
 END;
 
-EXEC dbo.updateDetails 'ShengKit', '0123456789', 'tsk@example.com'
 GRANT EXEC ON dbo.updateDetails TO IndividualCustomer;
 GRANT EXEC ON dbo.updateDetails TO TournamentOrganizer;
 
+EXEC dbo.updateDetails 'ShengKit', '0123456789', 'tsk@example.com'
+
+
 -- Book one facility at a time
-SELECT * FROM Users;
-SELECT * FROM Facility;
-SELECT * FROM Booking;
+GRANT SELECT ON Booking TO IndividualCustomer
+GRANT SELECT ON Booking TO TournamentOrganizer
 
 CREATE PROCEDURE BookFacility
 	@userID INT,
@@ -131,7 +132,6 @@ SELECT * FROM Booking
 SELECT * FROM ParticipantTeam
 INSERT INTO ParticipantTeam (teamName, bookingID) VALUES ('Team 3', 2)
 
----
 
 -- Register participant
 CREATE PROCEDURE RegisterParticipants
@@ -159,21 +159,19 @@ BEGIN
 END;
 
 SELECT * FROM Participants
-EXEC RegisterParticipants 5, 'MewTwo', 'mewtwo@gmail.com', '012345678'
-EXEC RegisterParticipants 5, 'MewFour', 'mewthree@gmail.com', '012345678'
 
--- View participants details under booking
 DENY SELECT ON Participants TO IndividualCustomer
 DENY SELECT ON Participants TO TournamentOrganizer
 
-GRANT SELECT ON Booking TO IndividualCustomer
-GRANT SELECT ON Booking TO TournamentOrganizer
+GRANT EXEC ON RegisterParticipants TO IndividualCustomer;
+GRANT EXEC ON RegisterParticipants TO TournamentOrganizer;
 
+EXEC RegisterParticipants 5, 'MewTwo', 'mewtwo@gmail.com', '012345678'
+EXEC RegisterParticipants 6, 'MEW11', 'mewt11e@gmail.com', '012345678'
+
+-- View participants details under booking
 DENY SELECT ON ParticipantTeam TO IndividualCustomer
 DENY SELECT ON ParticipantTeam TO TournamentOrganizer
-
-GRANT SELECT ON ViewParticipants TO IndividualCustomer
-GRANT SELECT ON ViewParticipants TO TournamentOrganizer
 
 CREATE VIEW ViewParticipants AS
 SELECT 
@@ -198,12 +196,14 @@ WHERE
     B.userID = UD.ID;  
 
 SELECT * FROM ViewParticipants
----
+GRANT SELECT ON ViewParticipants TO IndividualCustomer
+GRANT SELECT ON ViewParticipants TO TournamentOrganizer
+
 
 -- Update participants detail
-GRANT UPDATE ON dbo.Participants (Name, Mobile, Email) TO IndividualCustomer; -- I feel like this is enough. This is all about security level .
+GRANT UPDATE ON dbo.Participants (Name, Mobile, Email) TO IndividualCustomer;
 GRANT UPDATE ON dbo.Participants (Name, Mobile, Email) TO TournamentOrganizer; 
--- This more toward application liao
+
 CREATE PROCEDURE UpdateParticipantInfo
 	@ParticipantID INT,
     @NewName CHAR(100),
@@ -243,17 +243,9 @@ END;
 GRANT EXEC ON UpdateParticipantInfo TO IndividualCustomer;
 GRANT EXEC ON UpdateParticipantInfo TO TournamentOrganizer;
 EXEC UpdateParticipantInfo 1,'MewMew1','mew123@example.com','012312311'
-----
 
-SELECT * FROM Booking
-SELECT * FROM Participants
-SELECT * FROM ParticipantTeam
-SELECT * FROM Payment
 
-EXECUTE AS USER = 'SK';
-select * from viewTransaction
-REVERT
-
+-- View personal Transaction
 INSERT INTO [Transaction] VALUES (1, 5, 50, '2024-12-16 16:00:00')
 
 CREATE VIEW viewTransaction AS
@@ -275,6 +267,8 @@ INNER JOIN
 GRANT SELECT ON viewTransaction TO IndividualCustomer;
 GRANT SELECT ON viewTransaction TO TournamentOrganizer;
 
+
+-- View personal payment
 CREATE VIEW viewPayment AS
 SELECT
 	paymentID,
@@ -293,6 +287,7 @@ INNER JOIN
 GRANT SELECT ON viewPayment TO IndividualCustomer;
 GRANT SELECT ON viewPayment TO TournamentOrganizer
 
+-- User Audit table
 CREATE TABLE UserAuditTable(
 	auditID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
 	UserID INT NOT NULL,
@@ -341,6 +336,7 @@ BEGIN
 		inserted ON deleted.ID = inserted.ID
 END
 
+-- Participants Audit Table
 CREATE TABLE ParticipantsAuditTable(
 	auditID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
 	Updated_By VARCHAR(50) NOT NULL,
@@ -387,3 +383,7 @@ BEGIN
 	INNER JOIN 
 		inserted ON deleted.participantID = inserted.participantID
 END
+
+EXECUTE AS USER = 'Hanson';
+select * from viewTransaction
+REVERT
