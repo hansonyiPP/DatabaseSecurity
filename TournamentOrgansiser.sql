@@ -206,8 +206,24 @@ Select * FROM TournamentEventAudit
 GRANT EXEC ON AddTournamentEvent TO TournamentOrganizer;
 GRANT EXEC ON UpdateTournamentEvent TO TournamentOrganizer;
 GRANT EXEC ON DeleteTournamentEvent TO TournamentOrganizer;
+GRANT EXEC ON RegisterParticipants TO TournamentOrganizer;
+GRANT EXEC ON UpdateParticipantInfo TO TournamentOrganizer;
+GRANT EXEC ON Payment TO TournamentOrganizer;
+GRANT EXEC ON dbo.updateDetails TO TournamentOrganizer;
+GRANT EXEC ON BookFacility TO TournamentOrganizer
+GRANT SELECT ON Booking TO TournamentOrganizer;
+GRANT SELECT ON viewPayment TO TournamentOrganizer
+GRANT SELECT ON ViewParticipants TO TournamentOrganizer;
+GRANT SELECT ON viewTransaction TO TournamentOrganizer;
+GRANT SELECT ON ParticipantsAdutiTable TO TournamentOrganizer;
+GRANT SELECT ON dbo.userDetails TO TournamentOrganizer;
 GRANT SELECT ON dbo.TournamentEvents TO TournamentOrganizer;
 GRANT SELECT ON dbo.TournamentEventAudit TO TournamentOrganizer;
+DENY SELECT ON Participants TO TournamentOrganizer;
+DENY SELECT ON Users TO TournamentOrganizer;
+DENY SELECT ON ActivityLog TO TournamentOrganizer;
+DENY SELECT ON Payment TO TournamentOrganizer;
+DENY SELECT ON [Transaction] TO TournamentOrganizer;
 
 EXECUTE AS USER = 'Hanson';
 REVERT;
