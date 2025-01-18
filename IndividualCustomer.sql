@@ -1,4 +1,7 @@
-﻿-- Create Schema for user to edit only they data
+﻿DENY SELECT, INSERT ON Users TO IndividualCustomer;
+DENY SELECT, INSERT, UPDATE ON ActivityLog TO IndividualCustomer;
+
+-- Create Schema for user to edit only they data
 CREATE SCHEMA Security;
 GO
 
@@ -55,7 +58,7 @@ BEGIN
 		Name = @Name,
 		Mobile = @Mobile,
 		email = @Email
-	WHERE Username = USER_NAME();
+	--WHERE Username = USER_NAME();
 
 	IF @@ROWCOUNT = 0
 	BEGIN
@@ -69,12 +72,11 @@ END;
 
 GRANT EXEC ON dbo.updateDetails TO IndividualCustomer;
 GRANT EXEC ON dbo.updateDetails TO TournamentOrganizer;
-
-EXEC dbo.updateDetails 'ShengKit', '0123456789', 'tsk@example.com'
-
-
+EXECUTE AS USER = 'SK'
+EXEC dbo.updateDetails 'TongShengKit', '0123456789', 'tsk12@example.com'
+revert
 -- Book one facility at a time
-GRANT SELECT ON Booking TO IndividualCustomer
+GRANT SELECT, INSERT ON Booking TO IndividualCustomer
 GRANT SELECT ON Booking TO TournamentOrganizer
 
 CREATE PROCEDURE BookFacility
@@ -124,6 +126,7 @@ BEGIN
 END;
 
 SELECT * FROM Facility
+GRANT SELECT ON Facility TO IndividualCustomer;
 GRANT EXEC ON BookFacility TO IndividualCustomer;
 EXEC BookFacility 2, 1, '2024-12-16 14:00:00', '2024-03-21 10:00:00'
 
@@ -162,7 +165,7 @@ SELECT * FROM Participants
 
 DENY SELECT ON Participants TO IndividualCustomer
 DENY SELECT ON Participants TO TournamentOrganizer
-
+GRANT INSERT ON Participants TO IndividualCustomer
 GRANT EXEC ON RegisterParticipants TO IndividualCustomer;
 GRANT EXEC ON RegisterParticipants TO TournamentOrganizer;
 
@@ -247,6 +250,7 @@ EXEC UpdateParticipantInfo 1,'MewMew1','mew123@example.com','012312311'
 
 -- View personal Transaction
 INSERT INTO [Transaction] VALUES (1, 5, 50, '2024-12-16 16:00:00')
+DENY SELECT, UPDATE ON [Transaction] TO IndividualCustomer
 
 CREATE VIEW viewTransaction AS
 SELECT
@@ -269,6 +273,8 @@ GRANT SELECT ON viewTransaction TO TournamentOrganizer;
 
 
 -- View personal payment
+DENY SELECT, UPDATE ON Payment TO IndividualCustomer
+GRANT INSERT ON Payment TO IndividualCustomer
 CREATE VIEW viewPayment AS
 SELECT
 	paymentID,
